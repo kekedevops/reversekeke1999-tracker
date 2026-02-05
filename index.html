@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Tracker | Reverse 1999</title>
+  <style>
+    body {
+      font-family: "Segoe UI", Arial, sans-serif;
+      background: #f4f6f9;
+      margin: 0;
+      color: #333;
+    }
+
+    /* Navbar */
+    .navbar {
+      background: #fff;
+      padding: 15px 30px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+      position: sticky;
+      top: 0;
+    }
+
+    .navbar h2 {
+      color: #0078d7;
+      margin: 0;
+      font-weight: 700;
+    }
+
+    .nav-links {
+      display: flex;
+      gap: 20px;
+    }
+
+    .nav-links a {
+      text-decoration: none;
+      color: #333;
+      font-weight: 600;
+      transition: color 0.3s;
+    }
+
+    .nav-links a:hover {
+      color: #0078d7;
+    }
+
+    /* Banner counter */
+    .banner {
+      background: #0078d7;
+      color: #fff;
+      text-align: center;
+      padding: 12px;
+      font-size: 1.2rem;
+      font-weight: bold;
+    }
+
+    /* Tracker container */
+    .tracker-container {
+      max-width: 1200px;
+      margin: 30px auto;
+      padding: 20px;
+    }
+
+    .entry-card {
+      background: #fff;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+      margin-bottom: 20px;
+      position: relative;
+    }
+
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 20px;
+    }
+
+    .form-group {
+      display: flex;
+      flex-direction: column;
+    }
+
+    .form-group label {
+      font-weight: 600;
+      margin-bottom: 6px;
+      color: #333;
+    }
+
+    .form-group input {
+      padding: 10px;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+    }
+
+    .form-group input:focus {
+      border-color: #0078d7;
+      box-shadow: 0 0 5px rgba(0,120,215,0.3);
+    }
+
+    /* Remove button inside card */
+    .remove-btn {
+      position: absolute;
+      top: 15px;
+      right: 15px;
+      background: #dc3545;
+      color: #fff;
+      border: none;
+      border-radius: 6px;
+      padding: 6px 12px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: background 0.3s, transform 0.1s;
+    }
+
+    .remove-btn:hover {
+      background: #b52a37;
+      transform: scale(1.05);
+    }
+
+    /* Bottom buttons */
+    .button-group {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+      margin-top: 15px;
+    }
+
+    .button-group button {
+      padding: 10px 16px;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: background 0.3s, transform 0.1s;
+    }
+
+    #addEntryBtn {
+      background: #28a745;
+      color: #fff;
+    }
+
+    #addEntryBtn:hover {
+      background: #218838;
+      transform: scale(1.02);
+    }
+
+    #saveBtn {
+      background: #0078d7;
+      color: #fff;
+    }
+
+    #saveBtn:hover {
+      background: #005a9e;
+      transform: scale(1.02);
+    }
+
+    /* Import / Export buttons */
+    #importBtn {
+      background: #ffc107;
+      color: #212529;
+    }
+
+    #importBtn:hover {
+      background: #e0a800;
+      transform: scale(1.02);
+    }
+
+    #exportBtn {
+      background: #17a2b8;
+      color: #fff;
+    }
+
+    #exportBtn:hover {
+      background: #117a8b;
+      transform: scale(1.02);
+    }
+
+    /* Export CSV button (uses same styling as export) */
+    #exportCsvBtn {
+      background: #20c997;
+      color: #fff;
+    }
+
+    #exportCsvBtn:hover {
+      background: #198754;
+      transform: scale(1.02);
+    }
+
+    /* Import preview modal */
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+    }
+
+    .modal {
+      background: #fff;
+      padding: 18px;
+      border-radius: 10px;
+      width: min(900px, 95%);
+      max-height: 80vh;
+      overflow: auto;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.2);
+    }
+
+    .modal h3 {
+      margin-top: 0;
+    }
+
+    .modal .controls {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .preview-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 12px;
+    }
+
+    .preview-table th,
+    .preview-table td {
+      border: 1px solid #e6e6e6;
+      padding: 8px;
+      text-align: left;
+      font-size: 0.9rem;
+    }
+
+    .invalid-row {
+      background: #fff0f0;
+    }
+
+    .modal .actions {
+      display: flex;
+      justify-content: flex-end;
+      gap: 10px;
+    }
+
+    /* Settings modal */
+    .settings-modal .field-list {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+
+    /* Notification (toast) area */
+    .notify-area {
+      position: fixed;
+      right: 18px;
+      bottom: 18px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      z-index: 10000;
+    }
+
+    .toast {
+      min-width: 220px;
+      max-width: 340px;
+      padding: 10px 12px;
+      border-radius: 8px;
+      color: #fff;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.12);
+      font-weight: 600;
+      opacity: 0.98;
+    }
+
+    .toast.info { background: #0078d7; }
+    .toast.success { background: #28a745; }
+    .toast.error { background: #dc3545; }
+
+    .toast .close {
+      float: right;
+      margin-left: 8px;
+      cursor: pointer;
+      opacity: 0.9;
+    }
+  </style>
+</head>
+<body>
+  <!-- Navbar -->
+  <div class="navbar">
+    <h2>Reverse 1999 Tracker</h2>
+    <div class="nav-links">
+      <a href="landing.html">Home</a>
+      <a href="index.html">Tracker</a>
+      <a href="#">About</a>
+    </div>
+  </div>
+
+  <!-- Banner showing entry count -->
+  <div class="banner" id="entryBanner">Entries: 1</div>
+
+  <!-- Tracker Content -->
+  <div class="tracker-container" id="entriesContainer">
+    <!-- First entry card -->
+    <div class="entry-card">
+      <button class="remove-btn">✖ Remove</button>
+      <div class="form-grid">
+        <div class="form-group">
+          <label>Email</label>
+          <input type="text" name="email" placeholder="Email" />
+        </div>
+        <div class="form-group">
+          <label>Sign-on</label>
+          <input type="text" name="sign_on" placeholder="Sign-on" />
+        </div>
+        <div class="form-group">
+          <label>Username</label>
+          <input type="text" name="username" placeholder="Username" />
+        </div>
+        <div class="form-group">
+          <label>UID</label>
+          <input type="text" name="uid" placeholder="UID" />
+        </div>
+        <div class="form-group">
+          <label>Invite Code</label>
+          <input type="text" name="invite_code" placeholder="Invite Code" />
+        </div>
+        <div class="form-group">
+          <label>Level</label>
+          <input type="text" name="level" placeholder="Level" />
+        </div>
+        <div class="form-group">
+          <label>Objectives</label>
+          <input type="text" name="objectives" placeholder="Objectives" />
+        </div>
+        <div class="form-group">
+          <label>Pulls (70 pity)</label>
+          <input type="text" name="pulls" placeholder="Pulls" />
+        </div>
+        <div class="form-group">
+          <label>Daily Quest</label>
+          <input type="text" name="daily_quest" placeholder="Daily Quest" />
+        </div>
+        <div class="form-group">
+          <label>Limbo</label>
+          <input type="text" name="limbo" placeholder="Limbo" />
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Buttons -->
+  <div class="button-group">
+    <input type="file" id="importFile" accept="application/json" style="display:none" />
+    <button id="importBtn" type="button">📥 Import</button>
+    <button id="exportBtn" type="button">📤 Export JSON</button>
+    <button id="exportCsvBtn" type="button">📄 Export CSV</button>
+    <button id="settingsBtn" type="button">⚙️ Settings</button>
+    <button id="addEntryBtn" type="button">➕ Add Another Entry</button>
+    <button id="saveBtn" type="button">💾 Save All Entries</button>
+  </div>
+
+  <!-- Import preview modal (hidden by default) -->
+  <div class="modal-backdrop" id="importModal">
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="importModalTitle">
+      <h3 id="importModalTitle">Import Preview</h3>
+      <div class="controls">
+        <div>
+          <label><input type="radio" name="importMode" value="replace" checked /> Replace existing entries</label>
+          <label style="margin-left:12px"><input type="radio" name="importMode" value="append" /> Append to existing entries</label>
+        </div>
+        <label style="margin-left:auto"><input type="checkbox" id="skipInvalid" checked /> Skip invalid entries</label>
+      </div>
+
+      <div id="importSummary" style="margin-bottom:10px"></div>
+
+      <table class="preview-table" id="previewTable">
+        <thead id="previewHead"></thead>
+        <tbody id="previewBody"></tbody>
+      </table>
+
+      <div class="actions">
+        <button id="cancelImportBtn" type="button">Cancel</button>
+        <button id="confirmImportBtn" type="button">Confirm Import</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Settings modal (hidden) -->
+  <div class="modal-backdrop" id="settingsModal">
+    <div class="modal settings-modal" role="dialog" aria-modal="true" aria-labelledby="settingsModalTitle">
+      <h3 id="settingsModalTitle">Settings</h3>
+
+      <label style="font-weight:600; display:block; margin-bottom:8px">Required fields</label>
+      <div class="field-list" id="fieldsList"></div>
+
+      <label style="display:block; margin-bottom:10px;">
+        <input type="checkbox" id="autoDownloadBackup" /> Auto-download backup on Save
+      </label>
+
+      <div class="actions">
+        <button id="closeSettingsBtn" type="button">Close</button>
+        <button id="saveSettingsBtn" type="button">Save Settings</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Notification area -->
+  <div class="notify-area" id="notifyArea" aria-live="polite"></div>
+
+<script>
+  const entriesContainer = document.getElementById("entriesContainer");
+  const entryBanner = document.getElementById("entryBanner");
+  const importFile = document.getElementById("importFile");
+  const importBtn = document.getElementById("importBtn");
+  const exportBtn = document.getElementById("exportBtn");
+  const exportCsvBtn = document.getElementById("exportCsvBtn");
+  const importModal = document.getElementById("importModal");
+  const previewTable = document.getElementById("previewTable");
+  const previewHead = document.getElementById("previewHead");
+  const previewBody = document.getElementById("previewBody");
+  const importSummary = document.getElementById("importSummary");
+  const cancelImportBtn = document.getElementById("cancelImportBtn");
+  const confirmImportBtn = document.getElementById("confirmImportBtn");
+  const skipInvalidCheckbox = document.getElementById("skipInvalid");
+  const settingsBtn = document.getElementById("settingsBtn");
+  const settingsModal = document.getElementById("settingsModal");
+  const fieldsList = document.getElementById("fieldsList");
+  const saveSettingsBtn = document.getElementById("saveSettingsBtn");
+  const closeSettingsBtn = document.getElementById("closeSettingsBtn");
+  const autoDownloadBackupCheckbox = document.getElementById("autoDownloadBackup");
+  const notifyArea = document.getElementById("notifyArea");
+
+  // Fields order used for CSV and table preview
+  const fieldOrder = ["email","sign_on","username","uid","invite_code","level","objectives","pulls","daily_quest","limbo"];
+
+  // Default settings
+  const defaultSettings = {
+    requiredFields: ["email","username","uid"],
+    autoDownloadBackup: false
+  };
+
+  // Load settings from localStorage or defaults
+  function loadSettings() {
+    try {
+      const raw = localStorage.getItem('r1999_settings');
+      if (!raw) return { ...defaultSettings };
+      return { ...defaultSettings, ...JSON.parse(raw) };
+    } catch (err) {
+      console.error('Failed to load settings:', err);
+      return { ...defaultSettings };
+    }
+  }
+
+  // Save settings
+  function saveSettings(settings) {
+    localStorage.setItem('r1999_settings', JSON.stringify(settings));
+    showToast('Settings saved', 'success');
+  }
+
+  // Current runtime requiredFields (updated from settings)
+  let requiredFields = loadSettings().requiredFields;
+
+  // Toast notification helper
+  function showToast(message, type = 'info', timeout = 3500) {
+    const div = document.createElement('div');
+    div.className = `toast ${type}`;
+    div.innerHTML = `${message} <span class="close">✖</span>`;
+    notifyArea.appendChild(div);
+    const remove = () => div.remove();
+    div.querySelector('.close').addEventListener('click', remove);
+    setTimeout(() => { if (div.parentNode) div.remove(); }, timeout);
+  }
+
+  // Populate settings modal field checkboxes
+  function populateSettingsModal() {
+    fieldsList.innerHTML = '';
+    const settings = loadSettings();
+    fieldOrder.forEach(f => {
+      const label = document.createElement('label');
+      label.style.display = 'block';
+      const cb = document.createElement('input');
+      cb.type = 'checkbox';
+      cb.value = f;
+      cb.checked = settings.requiredFields.includes(f);
+      cb.style.marginRight = '6px';
+      label.appendChild(cb);
+      label.appendChild(document.createTextNode(f));
+      fieldsList.appendChild(label);
+    });
+    autoDownloadBackupCheckbox.checked = !!settings.autoDownloadBackup;
+  }
+
+  // Open settings modal
+  settingsBtn.addEventListener('click', () => {
+    populateSettingsModal();
+    settingsModal.style.display = 'flex';
+  });
+  closeSettingsBtn.addEventListener('click', () => settingsModal.style.display = 'none');
+
+  saveSettingsBtn.addEventListener('click', () => {
+    const checkboxes = fieldsList.querySelectorAll('input[type="checkbox"]');
+    const picked = Array.from(checkboxes).filter(c => c.checked).map(c => c.value);
+    const newSettings = { requiredFields: picked, autoDownloadBackup: !!autoDownloadBackupCheckbox.checked };
+    saveSettings(newSettings);
+    requiredFields = newSettings.requiredFields;
+    settingsModal.style.display = 'none';
+  });
+
+  // Update banner count
+  function updateBanner() {
+    const count = entriesContainer.querySelectorAll(".entry-card").length;
+    entryBanner.textContent = `Entries: ${count}`;
+  }
+
+  // Create a card (optionally with data object)
+  function createCard(data = {}) {
+    const newCard = document.createElement("div");
+    newCard.classList.add("entry-card");
+    newCard.innerHTML = `
+      <button class="remove-btn">✖ Remove</button>
+      <div class="form-grid">
+        <div class="form-group"><label>Email</label><input type="text" name="email" placeholder="Email" /></div>
+        <div class="form-group"><label>Sign-on</label><input type="text" name="sign_on" placeholder="Sign-on" /></div>
+        <div class="form-group"><label>Username</label><input type="text" name="username" placeholder="Username" /></div>
+        <div class="form-group"><label>UID</label><input type="text" name="uid" placeholder="UID" /></div>
+        <div class="form-group"><label>Invite Code</label><input type="text" name="invite_code" placeholder="Invite Code" /></div>
+        <div class="form-group"><label>Level</label><input type="text" name="level" placeholder="Level" /></div>
+        <div class="form-group"><label>Objectives</label><input type="text" name="objectives" placeholder="Objectives" /></div>
+        <div class="form-group"><label>Pulls (70 pity)</label><input type="text" name="pulls" placeholder="Pulls" /></div>
+        <div class="form-group"><label>Daily Quest</label><input type="text" name="daily_quest" placeholder="Daily Quest" /></div>
+        <div class="form-group"><label>Limbo</label><input type="text" name="limbo" placeholder="Limbo" /></div>
+      </div>
+    `;
+
+    // Fill with data if provided
+    Object.keys(data).forEach(key => {
+      const input = newCard.querySelector(`input[name="${key}"]`);
+      if (input) input.value = data[key];
+    });
+
+    // Bind remove button
+    newCard.querySelector(".remove-btn").addEventListener("click", () => {
+      newCard.remove();
+      updateBanner();
+    });
+
+    entriesContainer.appendChild(newCard);
+    updateBanner();
+    return newCard;
+  }
+
+  // Add another entry card (clone or new)
+  document.getElementById("addEntryBtn").addEventListener("click", () => {
+    const firstCard = document.querySelector(".entry-card");
+    if (firstCard) {
+      const newCard = firstCard.cloneNode(true);
+      newCard.querySelectorAll("input").forEach(input => input.value = "");
+      // Rebind remove button on clone
+      const removeBtn = newCard.querySelector(".remove-btn");
+      removeBtn.addEventListener("click", () => {
+        newCard.remove();
+        updateBanner();
+      });
+      entriesContainer.appendChild(newCard);
+      updateBanner();
+    } else {
+      createCard();
+    }
+  });
+
+  // Initial remove button binding (for the page's first card)
+  const initialRemove = document.querySelector(".remove-btn");
+  if (initialRemove) {
+    initialRemove.addEventListener("click", (e) => {
+      e.target.closest(".entry-card").remove();
+      updateBanner();
+    });
+  }
+
+  // Save all entries (existing behavior) + auto-backup (localStorage) + optional auto-download
+  document.getElementById("saveBtn").addEventListener("click", async () => {
+    const cards = document.querySelectorAll(".entry-card");
+    const allData = [];
+
+    cards.forEach(card => {
+      const inputs = card.querySelectorAll("input");
+      const rowData = {};
+      inputs.forEach(input => {
+        rowData[input.name] = input.value;
+      });
+      allData.push(rowData);
+    });
+
+    // Send to backend
+    try {
+      const response = await fetch("http://127.0.0.1:8000/add_user/", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(allData),
+      });
+      const result = await response.json();
+      console.log("Saved:", result);
+      showToast('All entries have been saved', 'success');
+
+      // Auto-backup: save to localStorage backups array (keep last 10)
+      const now = new Date();
+      const ts = now.toISOString();
+      const backup = { ts, data: allData };
+      try {
+        const raw = localStorage.getItem('r1999_backups');
+        const arr = raw ? JSON.parse(raw) : [];
+        arr.unshift(backup);
+        while (arr.length > 10) arr.pop();
+        localStorage.setItem('r1999_backups', JSON.stringify(arr));
+        showToast('Local backup saved', 'info');
+
+        // Auto-download if enabled
+        const settings = loadSettings();
+        if (settings.autoDownloadBackup) {
+          const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement('a');
+          a.href = url;
+          a.download = `reverse1999_backup_${ts.replace(/[:.]/g,'-')}.json`;
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          URL.revokeObjectURL(url);
+          showToast('Backup downloaded', 'info');
+        }
+      } catch (err) {
+        console.error('Backup failed:', err);
+        showToast('Backup failed (see console)', 'error');
+      }
+
+    } catch (err) {
+      console.error("Save failed:", err);
+      showToast('Save failed — check console', 'error');
+    }
+  });
+
+  // Export entries to JSON file
+  exportBtn.addEventListener("click", () => {
+    const cards = document.querySelectorAll(".entry-card");
+    const allData = Array.from(cards).map(card => {
+      const inputs = card.querySelectorAll("input");
+      const rowData = {};
+      inputs.forEach(input => rowData[input.name] = input.value);
+      return rowData;
+    });
+    const blob = new Blob([JSON.stringify(allData, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    const now = new Date();
+    const ts = now.toISOString().replace(/[:.]/g, "-");
+    a.href = url;
+    a.download = `reverse1999_entries_${ts}.json`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    showToast('Exported JSON', 'success');
+  });
+
+  // Export entries as CSV
+  exportCsvBtn.addEventListener("click", () => {
+    const cards = document.querySelectorAll(".entry-card");
+    const allData = Array.from(cards).map(card => {
+      const inputs = card.querySelectorAll("input");
+      const rowData = {};
+      inputs.forEach(input => rowData[input.name] = input.value);
+      return rowData;
+    });
+
+    // Build CSV (use fieldOrder)
+    const header = fieldOrder;
+    const lines = [header.join(",")];
+    allData.forEach(item => {
+      const row = header.map(h => {
+        const val = item[h] == null ? "" : String(item[h]);
+        // Escape double quotes
+        return `"${val.replace(/"/g, '""')}"`;
+      });
+      lines.push(row.join(","));
+    });
+
+    const blob = new Blob([lines.join("\n")], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    const now = new Date();
+    const ts = now.toISOString().replace(/[:.]/g, "-");
+    a.href = url;
+    a.download = `reverse1999_entries_${ts}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    showToast('Exported CSV', 'success');
+  });
+
+  // Validation helper
+  function validateEntries(dataArray) {
+    const results = { valid: [], invalid: [] };
+    dataArray.forEach((item, idx) => {
+      const missing = requiredFields.filter(f => !item || item[f] == null || String(item[f]).trim() === "");
+      if (missing.length) {
+        results.invalid.push({ index: idx, item, missing });
+      } else {
+        results.valid.push({ index: idx, item });
+      }
+    });
+    return results;
+  }
+
+  // Build preview table
+  function renderPreview(dataArray, validation) {
+    // Build table head
+    previewHead.innerHTML = "";
+    const headRow = document.createElement('tr');
+    fieldOrder.forEach(h => {
+      const th = document.createElement('th');
+      th.textContent = h;
+      headRow.appendChild(th);
+    });
+    previewHead.appendChild(headRow);
+
+    // Build body
+    previewBody.innerHTML = "";
+    dataArray.forEach((item, idx) => {
+      const tr = document.createElement('tr');
+      const invalid = validation.invalid.find(v => v.index === idx);
+      if (invalid) tr.classList.add('invalid-row');
+      fieldOrder.forEach(h => {
+        const td = document.createElement('td');
+        td.textContent = item[h] == null ? '' : item[h];
+        tr.appendChild(td);
+      });
+      previewBody.appendChild(tr);
+    });
+
+    // Summary
+    importSummary.textContent = `Total: ${dataArray.length} — Valid: ${validation.valid.length} — Invalid: ${validation.invalid.length}`;
+
+    // Confirm button enabled state
+    updateConfirmButtonState(validation);
+  }
+
+  function updateConfirmButtonState(validation) {
+    const skipInvalid = skipInvalidCheckbox.checked;
+    if (validation.invalid.length && !skipInvalid) {
+      confirmImportBtn.disabled = true;
+      confirmImportBtn.title = 'There are invalid entries; enable "Skip invalid entries" to allow import.';
+      confirmImportBtn.style.opacity = 0.6;
+    } else {
+      confirmImportBtn.disabled = false;
+      confirmImportBtn.title = '';
+      confirmImportBtn.style.opacity = 1;
+    }
+  }
+
+  // Show modal and render preview
+  function showImportModal(dataArray) {
+    const validation = validateEntries(dataArray);
+    renderPreview(dataArray, validation);
+    importModal.style.display = 'flex';
+
+    // bind skipInvalid change
+    skipInvalidCheckbox.onchange = () => updateConfirmButtonState(validation);
+
+    // Cancel handler
+    cancelImportBtn.onclick = () => {
+      importModal.style.display = 'none';
+      importFile.value = "";
+    };
+
+    // Confirm handler
+    confirmImportBtn.onclick = () => {
+      const mode = document.querySelector('input[name="importMode"]:checked').value;
+      const skipInvalid = skipInvalidCheckbox.checked;
+      const toImport = [];
+      const validation = validateEntries(dataArray);
+      validation.valid.forEach(v => toImport.push(v.item));
+      if (!skipInvalid && validation.invalid.length) {
+        alert('There are invalid entries. Either fix them or enable "Skip invalid entries".');
+        return;
+      }
+      if (skipInvalid) {
+        // already collected valid items
+      } else {
+        // include invalid items but try to fill missing with empty strings
+        validation.invalid.forEach(v => toImport.push(v.item));
+      }
+
+      if (mode === 'replace') {
+        document.querySelectorAll('.entry-card').forEach(c => c.remove());
+      }
+
+      toImport.forEach(item => createCard(item));
+      updateBanner();
+      importModal.style.display = 'none';
+      importFile.value = "";
+      alert(`Imported ${toImport.length} entries (${mode}).`);
+    };
+
+    // Esc to close
+    function escHandler(e) {
+      if (e.key === 'Escape') {
+        importModal.style.display = 'none';
+        importFile.value = "";
+        document.removeEventListener('keydown', escHandler);
+      }
+    }
+    document.addEventListener('keydown', escHandler);
+  }
+
+  // Import entries from JSON file -> show preview modal
+  importBtn.addEventListener("click", () => importFile.click());
+  importFile.addEventListener("change", (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try {
+        const data = JSON.parse(ev.target.result);
+        if (!Array.isArray(data)) throw new Error("JSON must be an array of entries");
+        // normalize objects
+        const normalized = data.map(d => {
+          const obj = {};
+          fieldOrder.forEach(f => obj[f] = d[f] == null ? '' : d[f]);
+          return obj;
+        });
+        showImportModal(normalized);
+      } catch (err) {
+        console.error("Import error:", err);
+        alert("Failed to import: " + err.message);
+        importFile.value = "";
+      }
+    };
+    reader.readAsText(file);
+  });
+
+  // Initialize banner
+  updateBanner();
+</script>
+</body>
+
+</html>
