@@ -240,6 +240,33 @@
       background: #fff0f0;
     }
 
+    /* Status color classes for select elements */
+    .status-select {
+      padding: 8px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      outline: none;
+      transition: background 0.15s, color 0.15s;
+    }
+
+    .status-select.status-done {
+      background: #28a745;
+      color: #fff;
+      border-color: #22863a;
+    }
+
+    .status-select.status-inprogress {
+      background: #ffc107;
+      color: #212529;
+      border-color: #e0a800;
+    }
+
+    .status-select.status-notstarted {
+      background: #6c757d;
+      color: #fff;
+      border-color: #6c757d;
+    }
+
     .modal .actions {
       display: flex;
       justify-content: flex-end;
@@ -334,7 +361,12 @@
         </div>
         <div class="form-group">
           <label>Objectives</label>
-          <input type="text" name="objectives" placeholder="Objectives" />
+          <select name="objectives">
+            <option value="">Select objective</option>
+            <option value="Event">Event</option>
+            <option value="Leveling">Leveling</option>
+            <option value="Materials">Materials</option>
+          </select>
         </div>
         <div class="form-group">
           <label>Pulls (70 pity)</label>
@@ -342,11 +374,19 @@
         </div>
         <div class="form-group">
           <label>Daily Quest</label>
-          <input type="text" name="daily_quest" placeholder="Daily Quest" />
+          <select name="daily_quest" class="status-select">
+            <option value="Not Started">Not Started</option>
+            <option value="In-Progress">In-Progress</option>
+            <option value="Done">Done</option>
+          </select>
         </div>
         <div class="form-group">
           <label>Limbo</label>
-          <input type="text" name="limbo" placeholder="Limbo" />
+          <select name="limbo" class="status-select">
+            <option value="Not Started">Not Started</option>
+            <option value="In-Progress">In-Progress</option>
+            <option value="Done">Done</option>
+          </select>
         </div>
       </div>
     </div>
@@ -587,10 +627,10 @@
     const allData = [];
 
     cards.forEach(card => {
-      const inputs = card.querySelectorAll("input");
+      const inputs = card.querySelectorAll("input, select");
       const rowData = {};
-      inputs.forEach(input => {
-        rowData[input.name] = input.value;
+      inputs.forEach(el => {
+        rowData[el.name] = el.value;
       });
       allData.push(rowData);
     });
@@ -647,7 +687,7 @@
   exportBtn.addEventListener("click", () => {
     const cards = document.querySelectorAll(".entry-card");
     const allData = Array.from(cards).map(card => {
-      const inputs = card.querySelectorAll("input");
+      const inputs = card.querySelectorAll("input, select");
       const rowData = {};
       inputs.forEach(input => rowData[input.name] = input.value);
       return rowData;
@@ -670,7 +710,7 @@
   exportCsvBtn.addEventListener("click", () => {
     const cards = document.querySelectorAll(".entry-card");
     const allData = Array.from(cards).map(card => {
-      const inputs = card.querySelectorAll("input");
+      const inputs = card.querySelectorAll("input, select");
       const rowData = {};
       inputs.forEach(input => rowData[input.name] = input.value);
       return rowData;
@@ -715,6 +755,86 @@
     });
     return results;
   }
+
+  // Update status class on a select
+  function updateStatusClass(select) {
+    if (!select) return;
+    select.classList.remove('status-done','status-inprogress','status-notstarted');
+    const v = (select.value || '').toString();
+    if (v === 'Done') select.classList.add('status-done');
+    else if (v === 'In-Progress') select.classList.add('status-inprogress');
+    else if (v === 'Not Started') select.classList.add('status-notstarted');
+  }
+
+  // Attach handlers for status-selects within a card
+  function attachStatusHandlers(card) {
+    card.querySelectorAll('.status-select').forEach(select => {
+      select.addEventListener('change', () => updateStatusClass(select));
+      // initialize state
+      updateStatusClass(select);
+    });
+  }
+
+  // Modify add-entry clone behavior to reset selects and attach handlers
+  document.getElementById("addEntryBtn").addEventListener("click", () => {
+    const firstCard = document.querySelector(".entry-card");
+    if (firstCard) {
+      const newCard = firstCard.cloneNode(true);
+      newCard.querySelectorAll("input").forEach(input => input.value = "");
+      newCard.querySelectorAll("select").forEach(select => {
+        // default daily_quest/limbo to Not Started, others to first option
+        if (select.name === 'daily_quest' || select.name === 'limbo') select.value = 'Not Started';
+        else select.selectedIndex = 0;
+      });
+      // Rebind remove button on clone
+      const removeBtn = newCard.querySelector(".remove-btn");
+      removeBtn.addEventListener("click", () => {
+        newCard.remove();
+        updateBanner();
+      });
+      // Attach status handlers
+      attachStatusHandlers(newCard);
+      entriesContainer.appendChild(newCard);
+      updateBanner();
+    } else {
+      createCard();
+    }
+  });
+
+  // Ensure initial page card(s) have status handlers
+  document.querySelectorAll('.entry-card').forEach(card => attachStatusHandlers(card));
+
+  // Import entries from JSON file -> show preview modal
+  importBtn.addEventListener("click", () => importFile.click());
+  importFile.addEventListener("change", (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      try {
+        const data = JSON.parse(ev.target.result);
+        if (!Array.isArray(data)) throw new Error("JSON must be an array of entries");
+        // normalize objects
+        const normalized = data.map(d => {
+          const obj = {};
+          fieldOrder.forEach(f => {
+            if ((f === 'daily_quest' || f === 'limbo')) {
+              obj[f] = d[f] == null || String(d[f]).trim() === '' ? 'Not Started' : d[f];
+            } else {
+              obj[f] = d[f] == null ? '' : d[f];
+            }
+          });
+          return obj;
+        });
+        showImportModal(normalized);
+      } catch (err) {
+        console.error("Import error:", err);
+        alert("Failed to import: " + err.message);
+        importFile.value = "";
+      }
+    };
+    reader.readAsText(file);
+  });
 
   // Build preview table
   function renderPreview(dataArray, validation) {
