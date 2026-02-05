@@ -411,8 +411,16 @@
           <input type="text" name="email" placeholder="Email" />
         </div>
         <div class="form-group">
-          <label>Sign-on</label>
-          <input type="text" name="sign_on" placeholder="Sign-on" />
+          <label>Device and Sign-on method</label>
+          <select name="sign_on" class="styled-select">
+            <option value="">Select Device and Sign-on Method</option>
+            <option value="desktop_google">Device: Desktop | Google Account</option>
+            <option value="desktop_email">Device: Desktop | E-mail</option>
+            <option value="desktop_facebook">Device: Desktop | Facebook</option>
+            <option value="mobile_google">Device: Mobile | Google Account</option>
+            <option value="mobile_email">Device: Mobile | E-mail</option>
+            <option value="mobile_facebook">Device: Mobile | Facebook</option>
+          </select>          
         </div>
         <div class="form-group">
           <label>Username</label>
@@ -423,8 +431,14 @@
           <input type="text" name="uid" placeholder="UID" />
         </div>
         <div class="form-group">
-          <label>Invite Code</label>
-          <input type="text" name="invite_code" placeholder="Invite Code" />
+          <label>Reveries in the Rain</label>
+          <select name="reveries_in_the_rain" class="styled-select">
+            <option value="">Select objective</option>
+            <option value="early_staget">Early Stages (10M - 100M)</option>
+            <option value="transition_zone">Transition Zone (200M)</option>
+            <option value="abyssal_depths">Abyssal Depths (300M - 450M)</option>
+            <option value="endless_extreme">Endless/Extreme (500M upto 1000M)</option>
+          </select>
         </div>
         <div class="form-group">
           <label>Level</label>
@@ -458,6 +472,15 @@
             <option value="In-Progress">In-Progress</option>
             <option value="Done">Done</option>
           </select>
+        </div>
+        <div class="form-group">
+          <label>Wilderness Code</label>
+          <input type="text" name="wilderness_code" placeholder="Wilderness Code" />
+        </div>
+        <div>
+        <div class="form-group">
+          <label>Invite Code</label>
+          <input type="text" name="invite_code" placeholder="Invite Code" /> 
         </div>
       </div>
     </div>
@@ -649,6 +672,7 @@
         <div class="form-group"><label>Pulls (70 pity)</label><input type="text" name="pulls" placeholder="Pulls" /></div>
         <div class="form-group"><label>Daily Quest</label><select name="daily_quest" class="status-select"><option value="Not Started">Not Started</option><option value="In-Progress">In-Progress</option><option value="Done">Done</option></select></div>
         <div class="form-group"><label>Limbo</label><select name="limbo" class="status-select"><option value="Not Started">Not Started</option><option value="In-Progress">In-Progress</option><option value="Done">Done</option></select></div>
+        <div class="form-group"><label>Wilderness Code</label><input type="text" name="wilderness_code" placeholder="Wilderness Code" /></div>
       </div>
     `;
 
