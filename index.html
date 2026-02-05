@@ -138,6 +138,53 @@
       transition: background 0.3s, transform 0.1s;
     }
 
+    /* Floating toolbar (bottom-center) */
+    .floating-toolbar {
+      position: fixed;
+      bottom: 18px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: rgba(255,255,255,0.98);
+      padding: 8px 10px;
+      border-radius: 12px;
+      box-shadow: 0 8px 24px rgba(0,0,0,0.12);
+      z-index: 10005;
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      max-width: 95%;
+      overflow: auto;
+      justify-content: center;
+    }
+
+    /* Slightly smaller buttons in the floating toolbar */
+    .floating-toolbar button { padding: 8px 12px; }
+
+    /* Ensure floating toolbar wraps on small screens */
+    @media (max-width: 480px) {
+      .floating-toolbar { padding: 6px; gap: 6px; }
+      .floating-toolbar button { padding: 6px 8px; font-size: 0.9rem; }
+    }
+
+    /* Toolbar show button (appears when toolbar hidden) */
+    .toolbar-show-button {
+      position: fixed;
+      bottom: 18px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 10006;
+      padding: 8px 10px;
+      border-radius: 12px;
+      background: rgba(0,0,0,0.7);
+      color: #fff;
+      border: none;
+      box-shadow: 0 6px 18px rgba(0,0,0,0.12);
+      cursor: pointer;
+      font-weight: 700;
+    }
+
+    .toolbar-show-button:hover { opacity: 0.95; }
+
     #addEntryBtn {
       background: #28a745;
       color: #fff;
@@ -416,15 +463,7 @@
     </div>
   </div>
 
-  <!-- Buttons -->
-  <div class="button-group">
-    <input type="file" id="importFile" accept="application/json" style="display:none" />
-    <button id="addEntryBtn" type="button">➕ Add Another Entry</button>
-    <button id="importBtn" type="button">📥 Import</button>
-    <button id="exportBtn" type="button">📤 Export JSON</button>
-    <button id="exportCsvBtn" type="button">📄 Export CSV</button>
-    <button id="settingsBtn" type="button">⚙️ Settings</button>
-  </div>
+
 
   <!-- Import preview modal (hidden by default) -->
   <div class="modal-backdrop" id="importModal">
@@ -470,6 +509,19 @@
       </div>
     </div>
   </div>
+
+  <!-- Floating toolbar (bottom-center) -->
+  <div class="button-group floating-toolbar" id="floatingToolbar">
+    <input type="file" id="importFile" accept="application/json" style="display:none" />
+    <button id="addEntryBtn" type="button">➕ Add Another Entry</button>
+    <button id="importBtn" type="button">📥 Import</button>
+    <button id="exportBtn" type="button">📤 Export JSON</button>
+    <button id="exportCsvBtn" type="button">📄 Export CSV</button>
+    <button id="saveBtn" type="button">💾 Save All Entries</button>
+    <button id="settingsBtn" type="button">⚙️ Settings</button>
+    <button id="toolbarToggleBtn" type="button" title="Hide toolbar">Hide</button>
+  </div>
+  <button id="toolbarShowBtn" class="toolbar-show-button" style="display:none">Show</button>
 
   <!-- Notification area -->
   <div class="notify-area" id="notifyArea" aria-live="polite"></div>
@@ -561,8 +613,9 @@
   settingsBtn.addEventListener('click', () => {
     populateSettingsModal();
     settingsModal.style.display = 'flex';
+    hideToolbarForModal(true);
   });
-  closeSettingsBtn.addEventListener('click', () => settingsModal.style.display = 'none');
+  closeSettingsBtn.addEventListener('click', () => { settingsModal.style.display = 'none'; hideToolbarForModal(false); });
 
   saveSettingsBtn.addEventListener('click', () => {
     const checkboxes = fieldsList.querySelectorAll('input[type="checkbox"]');
@@ -618,25 +671,6 @@
     updateBanner();
     return newCard;
   }
-
-  // Add another entry card (clone or new)
-  document.getElementById("addEntryBtn").addEventListener("click", () => {
-    const firstCard = document.querySelector(".entry-card");
-    if (firstCard) {
-      const newCard = firstCard.cloneNode(true);
-      newCard.querySelectorAll("input").forEach(input => input.value = "");
-      // Rebind remove button on clone
-      const removeBtn = newCard.querySelector(".remove-btn");
-      removeBtn.addEventListener("click", () => {
-        newCard.remove();
-        updateBanner();
-      });
-      entriesContainer.appendChild(newCard);
-      updateBanner();
-    } else {
-      createCard();
-    }
-  });
 
   // Initial remove button binding (for the page's first card)
   const initialRemove = document.querySelector(".remove-btn");
@@ -847,6 +881,50 @@
   // Ensure initial page card(s) have status handlers
   document.querySelectorAll('.entry-card').forEach(card => attachStatusHandlers(card));
 
+  // Toolbar auto-hide & toggle helpers
+  const floatingToolbar = document.getElementById('floatingToolbar');
+  const toolbarToggleBtn = document.getElementById('toolbarToggleBtn');
+  const toolbarShowBtn = document.getElementById('toolbarShowBtn');
+  let toolbarUserHidden = false;
+
+  function toggleToolbar(show) {
+    if (show) {
+      floatingToolbar.style.display = 'flex';
+      toolbarShowBtn.style.display = 'none';
+      if (toolbarToggleBtn) toolbarToggleBtn.textContent = 'Hide';
+    } else {
+      floatingToolbar.style.display = 'none';
+      toolbarShowBtn.style.display = 'block';
+      if (toolbarToggleBtn) toolbarToggleBtn.textContent = 'Show';
+    }
+  }
+
+  function hideToolbarForModal(hide) {
+    if (!floatingToolbar) return;
+    if (hide) {
+      // remember if it was visible so that we can restore
+      if (floatingToolbar.style.display !== 'none') floatingToolbar.dataset.autoHidden = 'true';
+      floatingToolbar.style.display = 'none';
+      toolbarShowBtn.style.display = 'block';
+    } else {
+      if (floatingToolbar.dataset.autoHidden === 'true' && !toolbarUserHidden) {
+        floatingToolbar.style.display = 'flex';
+        toolbarShowBtn.style.display = 'none';
+      }
+      delete floatingToolbar.dataset.autoHidden;
+    }
+  }
+
+  toolbarToggleBtn.addEventListener('click', () => {
+    toolbarUserHidden = !toolbarUserHidden;
+    toggleToolbar(!toolbarUserHidden);
+  });
+
+  toolbarShowBtn.addEventListener('click', () => {
+    toolbarUserHidden = false;
+    toggleToolbar(true);
+  });
+
   // Import entries from JSON file -> show preview modal
   importBtn.addEventListener("click", () => importFile.click());
   importFile.addEventListener("change", (e) => {
@@ -930,6 +1008,7 @@
     const validation = validateEntries(dataArray);
     renderPreview(dataArray, validation);
     importModal.style.display = 'flex';
+    hideToolbarForModal(true);
 
     // bind skipInvalid change
     skipInvalidCheckbox.onchange = () => updateConfirmButtonState(validation);
@@ -938,6 +1017,7 @@
     cancelImportBtn.onclick = () => {
       importModal.style.display = 'none';
       importFile.value = "";
+      hideToolbarForModal(false);
     };
 
     // Confirm handler
@@ -966,6 +1046,7 @@
       updateBanner();
       importModal.style.display = 'none';
       importFile.value = "";
+      hideToolbarForModal(false);
       alert(`Imported ${toImport.length} entries (${mode}).`);
     };
 
@@ -974,6 +1055,7 @@
       if (e.key === 'Escape') {
         importModal.style.display = 'none';
         importFile.value = "";
+        hideToolbarForModal(false);
         document.removeEventListener('keydown', escHandler);
       }
     }
