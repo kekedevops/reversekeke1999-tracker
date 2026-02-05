@@ -267,6 +267,22 @@
       border-color: #6c757d;
     }
 
+    /* Neutral styled select (for Objectives) */
+    .styled-select {
+      padding: 8px;
+      border-radius: 6px;
+      border: 1px solid #ccc;
+      outline: none;
+      background: #fff;
+      color: #212529;
+      transition: border-color 0.15s, box-shadow 0.15s;
+    }
+
+    .styled-select:focus {
+      border-color: #0078d7;
+      box-shadow: 0 0 4px rgba(0,120,215,0.15);
+    }
+
     .modal .actions {
       display: flex;
       justify-content: flex-end;
@@ -361,7 +377,7 @@
         </div>
         <div class="form-group">
           <label>Objectives</label>
-          <select name="objectives">
+          <select name="objectives" class="styled-select">
             <option value="">Select objective</option>
             <option value="Event">Event</option>
             <option value="Leveling">Leveling</option>
@@ -569,17 +585,17 @@
         <div class="form-group"><label>UID</label><input type="text" name="uid" placeholder="UID" /></div>
         <div class="form-group"><label>Invite Code</label><input type="text" name="invite_code" placeholder="Invite Code" /></div>
         <div class="form-group"><label>Level</label><input type="text" name="level" placeholder="Level" /></div>
-        <div class="form-group"><label>Objectives</label><input type="text" name="objectives" placeholder="Objectives" /></div>
+        <div class="form-group"><label>Objectives</label><select name="objectives" class="styled-select"><option value="">Select objective</option><option value="Event">Event</option><option value="Leveling">Leveling</option><option value="Materials">Materials</option></select></div>
         <div class="form-group"><label>Pulls (70 pity)</label><input type="text" name="pulls" placeholder="Pulls" /></div>
-        <div class="form-group"><label>Daily Quest</label><input type="text" name="daily_quest" placeholder="Daily Quest" /></div>
-        <div class="form-group"><label>Limbo</label><input type="text" name="limbo" placeholder="Limbo" /></div>
+        <div class="form-group"><label>Daily Quest</label><select name="daily_quest" class="status-select"><option value="Not Started">Not Started</option><option value="In-Progress">In-Progress</option><option value="Done">Done</option></select></div>
+        <div class="form-group"><label>Limbo</label><select name="limbo" class="status-select"><option value="Not Started">Not Started</option><option value="In-Progress">In-Progress</option><option value="Done">Done</option></select></div>
       </div>
     `;
 
     // Fill with data if provided
     Object.keys(data).forEach(key => {
-      const input = newCard.querySelector(`input[name="${key}"]`);
-      if (input) input.value = data[key];
+      const el = newCard.querySelector(`[name="${key}"]`);
+      if (el) el.value = data[key];
     });
 
     // Bind remove button
@@ -587,6 +603,9 @@
       newCard.remove();
       updateBanner();
     });
+
+    // Attach status handlers for selects
+    attachStatusHandlers(newCard);
 
     entriesContainer.appendChild(newCard);
     updateBanner();
@@ -937,31 +956,7 @@
     document.addEventListener('keydown', escHandler);
   }
 
-  // Import entries from JSON file -> show preview modal
-  importBtn.addEventListener("click", () => importFile.click());
-  importFile.addEventListener("change", (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = (ev) => {
-      try {
-        const data = JSON.parse(ev.target.result);
-        if (!Array.isArray(data)) throw new Error("JSON must be an array of entries");
-        // normalize objects
-        const normalized = data.map(d => {
-          const obj = {};
-          fieldOrder.forEach(f => obj[f] = d[f] == null ? '' : d[f]);
-          return obj;
-        });
-        showImportModal(normalized);
-      } catch (err) {
-        console.error("Import error:", err);
-        alert("Failed to import: " + err.message);
-        importFile.value = "";
-      }
-    };
-    reader.readAsText(file);
-  });
+
 
   // Initialize banner
   updateBanner();
