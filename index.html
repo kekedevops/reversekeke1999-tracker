@@ -283,6 +283,14 @@
       box-shadow: 0 0 4px rgba(0,120,215,0.15);
     }
 
+    /* Entry-level done state: whole card highlights when both statuses are Done */
+    .entry-card.entry-done {
+      background: linear-gradient(180deg, #eafbea, #e0f8e0);
+      border: 1px solid #28a745;
+      box-shadow: 0 6px 18px rgba(40,167,69,0.12);
+      transition: background 0.18s, box-shadow 0.18s, border-color 0.18s;
+    }
+
     .modal .actions {
       display: flex;
       justify-content: flex-end;
@@ -411,12 +419,11 @@
   <!-- Buttons -->
   <div class="button-group">
     <input type="file" id="importFile" accept="application/json" style="display:none" />
+    <button id="addEntryBtn" type="button">➕ Add Another Entry</button>
     <button id="importBtn" type="button">📥 Import</button>
     <button id="exportBtn" type="button">📤 Export JSON</button>
     <button id="exportCsvBtn" type="button">📄 Export CSV</button>
     <button id="settingsBtn" type="button">⚙️ Settings</button>
-    <button id="addEntryBtn" type="button">➕ Add Another Entry</button>
-    <button id="saveBtn" type="button">💾 Save All Entries</button>
   </div>
 
   <!-- Import preview modal (hidden by default) -->
@@ -782,16 +789,33 @@
     const v = (select.value || '').toString();
     if (v === 'Done') select.classList.add('status-done');
     else if (v === 'In-Progress') select.classList.add('status-inprogress');
-    else if (v === 'Not Started') select.classList.add('status-notstarted');
+    else select.classList.add('status-notstarted');
+  }
+
+  // Update whole entry card status (becomes green when both daily & limbo are Done)
+  function updateEntryStatus(card) {
+    if (!card) return;
+    const daily = card.querySelector('select[name="daily_quest"]')?.value;
+    const limbo = card.querySelector('select[name="limbo"]')?.value;
+    if (daily === 'Done' && limbo === 'Done') {
+      card.classList.add('entry-done');
+    } else {
+      card.classList.remove('entry-done');
+    }
   }
 
   // Attach handlers for status-selects within a card
   function attachStatusHandlers(card) {
     card.querySelectorAll('.status-select').forEach(select => {
-      select.addEventListener('change', () => updateStatusClass(select));
+      select.addEventListener('change', () => {
+        updateStatusClass(select);
+        updateEntryStatus(select.closest('.entry-card'));
+      });
       // initialize state
       updateStatusClass(select);
     });
+    // initialize card-level state
+    updateEntryStatus(card);
   }
 
   // Modify add-entry clone behavior to reset selects and attach handlers
